@@ -11,10 +11,10 @@ const NAV_ITEMS = [
 ]
 
 const VOICES = [
-  { id: 'maya', name: 'Maya', role: 'Warm storyteller', language: 'English', accent: 'US / neutral', tone: 'Warm · intimate', color: '#f0a57a', bars: [3, 6, 8, 5, 9, 4, 7, 3, 8, 5, 6, 4] },
-  { id: 'jonah', name: 'Jonah', role: 'Documentary calm', language: 'English', accent: 'UK / soft', tone: 'Measured · clear', color: '#8bb8f4', bars: [7, 4, 5, 8, 3, 7, 9, 4, 6, 8, 5, 7] },
-  { id: 'sora', name: 'Sora', role: 'Bright guide', language: 'English', accent: 'AU / light', tone: 'Curious · bright', color: '#b6a2f5', bars: [4, 7, 5, 9, 5, 8, 4, 6, 8, 4, 7, 5] },
-  { id: 'luis', name: 'Luis', role: 'Conversational', language: 'Spanish', accent: 'MX / natural', tone: 'Friendly · vivid', color: '#7bc4b1', bars: [5, 4, 8, 6, 9, 5, 7, 4, 8, 6, 5, 9] },
+  { id: 'maya', name: 'Maya', role: 'Warm storyteller', language: 'English', accent: 'US / neutral', tone: 'Warm · intimate', color: '#f0a57a', bars: [3, 6, 8, 5, 9, 4, 7, 3, 8, 5, 6, 4], lang: 'en-US', pitch: 1.05, rate: 0.95, sample: "Hi, I'm Maya. Every image holds a moment — let me tell its story." },
+  { id: 'jonah', name: 'Jonah', role: 'Documentary calm', language: 'English', accent: 'UK / soft', tone: 'Measured · clear', color: '#8bb8f4', bars: [7, 4, 5, 8, 3, 7, 9, 4, 6, 8, 5, 7], lang: 'en-GB', pitch: 0.85, rate: 0.9, sample: "I'm Jonah. Calm, measured narration for stories that take their time." },
+  { id: 'sora', name: 'Sora', role: 'Bright guide', language: 'English', accent: 'AU / light', tone: 'Curious · bright', color: '#b6a2f5', bars: [4, 7, 5, 9, 5, 8, 4, 6, 8, 4, 7, 5], lang: 'en-AU', pitch: 1.15, rate: 1.05, sample: "Hey, I'm Sora! Bright and curious — perfect for guides and explainers." },
+  { id: 'luis', name: 'Luis', role: 'Conversational', language: 'Spanish', accent: 'MX / natural', tone: 'Friendly · vivid', color: '#7bc4b1', bars: [5, 4, 8, 6, 9, 5, 7, 4, 8, 6, 5, 9], lang: 'es-MX', pitch: 1, rate: 1, sample: 'Hola, soy Luis. Una voz natural y cercana para tus historias.' },
 ]
 
 const SCENES = [
@@ -72,7 +72,7 @@ function Logo() {
   </div>
 }
 
-function Sidebar({ activeNav, setActiveNav }) {
+function Sidebar({ activeNav, setActiveNav, showToast }) {
   return <aside className="sidebar">
     <Logo />
     <div className="workspace-switcher"><div className="workspace-avatar">A</div><div className="workspace-copy"><strong>Atlas workspace</strong><span>Personal studio</span></div><Icon name="chevronDown" size={14} /></div>
@@ -86,15 +86,15 @@ function Sidebar({ activeNav, setActiveNav }) {
       <button className={`side-nav-item ${activeNav === 'help' ? 'active' : ''}`} onClick={() => setActiveNav('help')}><Icon name="help" size={17} /><span>Help center</span></button>
     </nav>
     <div className="sidebar-spacer" />
-    <div className="usage-card"><div className="usage-top"><span>Monthly renders</span><span>7 / 20</span></div><div className="usage-bar"><span style={{ width: '35%' }} /></div><div className="usage-foot"><span>Resets in 18 days</span><button>Upgrade <Icon name="arrow" size={12} /></button></div></div>
+    <div className="usage-card"><div className="usage-top"><span>Monthly renders</span><span>7 / 20</span></div><div className="usage-bar"><span style={{ width: '35%' }} /></div><div className="usage-foot"><span>Resets in 18 days</span><button onClick={() => showToast('Creator plan', 'You are on the Creator plan — 13 renders left this month.')}>Upgrade <Icon name="arrow" size={12} /></button></div></div>
     <div className="profile"><div className="profile-avatar">AM</div><div><strong>Alex Morgan</strong><span>Creator plan</span></div><Icon name="more" size={18} /></div>
   </aside>
 }
 
-function Topbar({ onRender, rendering, onDownload }) {
+function Topbar({ onRender, rendering, onDownload, onHelp, showToast }) {
   return <header className="topbar">
     <div className="crumbs"><span>Studio</span><Icon name="chevron" size={14} /><strong>Untitled story</strong><span className="unsaved">Unsaved</span></div>
-    <div className="top-actions"><button className="icon-button subtle" aria-label="Help"><Icon name="help" size={17} /></button><button className="icon-button subtle" aria-label="More"><Icon name="more" size={18} /></button><div className="top-divider" /><button className="button secondary" onClick={onDownload}><Icon name="download" size={15} /> Export</button><button className="button primary" onClick={onRender} disabled={rendering}><Icon name={rendering ? 'clock' : 'sparkle'} size={15} /> {rendering ? 'Rendering…' : 'Render video'}</button></div>
+    <div className="top-actions"><button className="icon-button subtle" aria-label="Help" onClick={onHelp}><Icon name="help" size={17} /></button><button className="icon-button subtle" aria-label="More" onClick={() => showToast('Project menu', 'Duplicate, rename, and share options are coming soon.')}><Icon name="more" size={18} /></button><div className="top-divider" /><button className="button secondary" onClick={onDownload}><Icon name="download" size={15} /> Export</button><button className="button primary" onClick={onRender} disabled={rendering}><Icon name={rendering ? 'clock' : 'sparkle'} size={15} /> {rendering ? 'Rendering…' : 'Render video'}</button></div>
   </header>
 }
 
@@ -114,7 +114,7 @@ function SourceCard({ imageSrc, imageName, onPickImage }) {
       <button className="replace-button" onClick={e => { e.stopPropagation(); inputRef.current?.click() }}>Replace</button>
     </div>
     <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e => useFile(e.target.files?.[0])} />
-    <div className="source-meta"><div className="mini-thumb"><img src={imageSrc} alt="" /></div><div><strong>{imageName}</strong><span>1600 × 1000 · source frame</span></div><button className="icon-button subtle"><Icon name="more" size={17} /></button></div>
+    <div className="source-meta"><div className="mini-thumb"><img src={imageSrc} alt="" /></div><div><strong>{imageName}</strong><span>1600 × 1000 · source frame</span></div><button className="icon-button subtle" aria-label="Replace image" onClick={() => inputRef.current?.click()}><Icon name="more" size={17} /></button></div>
   </div>
 }
 
@@ -141,31 +141,60 @@ function VoiceCard({ voice, selected, playing, onSelect, onPlay }) {
   </div>
 }
 
-function VoiceSection({ selectedVoice, setSelectedVoice, narration, setNarration }) {
+function VoiceSection({ selectedVoice, setSelectedVoice, narration, setNarration, showToast }) {
   const [playingVoice, setPlayingVoice] = useState(null)
   const [query, setQuery] = useState('')
   const visibleVoices = useMemo(() => VOICES.filter(v => `${v.name} ${v.role} ${v.accent}`.toLowerCase().includes(query.toLowerCase())), [query])
-  useEffect(() => { if (!playingVoice) return; const timer = setTimeout(() => setPlayingVoice(null), 1800); return () => clearTimeout(timer) }, [playingVoice])
+  useEffect(() => () => window.speechSynthesis?.cancel(), [])
+  function handlePlay(id) {
+    const synth = window.speechSynthesis
+    if (!synth) return showToast('Preview unavailable', 'This browser does not support voice previews.', 'error')
+    if (playingVoice === id) { synth.cancel(); return setPlayingVoice(null) }
+    synth.cancel()
+    const voice = VOICES.find(v => v.id === id)
+    const utterance = new SpeechSynthesisUtterance(voice.sample)
+    utterance.lang = voice.lang
+    utterance.pitch = voice.pitch
+    utterance.rate = voice.rate
+    const systemVoices = synth.getVoices()
+    const match = systemVoices.find(v => v.lang === voice.lang) || systemVoices.find(v => v.lang?.startsWith(voice.lang.split('-')[0]))
+    if (match) utterance.voice = match
+    utterance.onend = () => setPlayingVoice(current => (current === id ? null : current))
+    utterance.onerror = () => setPlayingVoice(current => (current === id ? null : current))
+    setPlayingVoice(id)
+    synth.speak(utterance)
+  }
   return <section className="voice-section panel">
-    <SectionHeader eyebrow="03 / narration" title="Give it a voice" note="Add a voiceover to make the moment feel intentional." action={<div className="voice-actions-header"><div className="search-field"><Icon name="search" size={15} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search voices" /></div><button className="button secondary compact"><Icon name="plus" size={14} /> Clone voice</button></div>} />
+    <SectionHeader eyebrow="03 / narration" title="Give it a voice" note="Add a voiceover to make the moment feel intentional." action={<div className="voice-actions-header"><div className="search-field"><Icon name="search" size={15} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search voices" /></div><button className="button secondary compact" onClick={() => showToast('Voice cloning', 'Cloning uses your ElevenLabs voices — add VOICE_*_ID values on the server to enable it.')}><Icon name="plus" size={14} /> Clone voice</button></div>} />
     <div className="voice-subbar"><div className="voice-toggle"><span className="toggle on"><i /></span><span>Voiceover enabled</span></div><div className="voice-note"><Icon name="volume" size={14} /> This script becomes the audio track</div></div>
     <div className="voice-script-wrap"><div className="field-label"><label htmlFor="narration">Narration script</label><span>{narration.length} / 2,000</span></div><textarea id="narration" className="voice-script" value={narration} onChange={e => setNarration(e.target.value)} placeholder="Write what the selected voice should say…" /></div>
-    <div className="voices-grid">{visibleVoices.map(voice => <VoiceCard key={voice.id} voice={voice} selected={selectedVoice === voice.id} playing={playingVoice === voice.id} onSelect={setSelectedVoice} onPlay={id => setPlayingVoice(playingVoice === id ? null : id)} />)}</div>
-    <div className="voice-footer"><span>Showing {visibleVoices.length} of 24 voices</span><button className="text-button">Browse full library <Icon name="arrow" size={13} /></button></div>
+    <div className="voices-grid">{visibleVoices.map(voice => <VoiceCard key={voice.id} voice={voice} selected={selectedVoice === voice.id} playing={playingVoice === voice.id} onSelect={setSelectedVoice} onPlay={handlePlay} />)}</div>
+    <div className="voice-footer"><span>Showing {visibleVoices.length} of {VOICES.length} voices</span><button className="text-button" onClick={() => { setQuery(''); showToast('Voice library', `All ${VOICES.length} workspace voices are shown. Tap play to hear a preview.`) }}>Browse full library <Icon name="arrow" size={13} /></button></div>
   </section>
 }
 
 function PreviewCard({ imageSrc, videoUrl, prompt, rendering, progress, selectedVoice, duration }) {
+  const [previewing, setPreviewing] = useState(false)
+  useEffect(() => { if (!previewing) return; const timer = setTimeout(() => setPreviewing(false), 6000); return () => clearTimeout(timer) }, [previewing])
   return <div className="preview-card panel">
-    <div className="preview-header"><div><div className="eyebrow">Live preview</div><h3>{rendering ? 'Rendering your scene' : videoUrl ? 'Rendered video' : 'Motion preview'}</h3></div><div className={`preview-status ${rendering ? 'rendering' : 'ready'}`}><i /> {rendering ? `${progress}%` : videoUrl ? 'Video ready' : 'Preview ready'}</div></div>
-    <div className={`preview-stage ${rendering ? 'is-rendering' : ''}`}>{videoUrl && !rendering ? <video className="preview-video" src={videoUrl} controls autoPlay loop playsInline /> : <img className="preview-image" src={imageSrc} alt="Motion preview" />}<div className="preview-vignette" /><div className="scanline" />{rendering && <div className="render-progress"><div className="render-spinner"><Icon name="sparkle" size={20} /></div><strong>Building movement</strong><span>Generating depth, light, and camera motion</span><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div>}{!rendering && !videoUrl && <button className="preview-play"><Icon name="play" size={22} /></button>}<div className="preview-caption"><span>SCENE 01</span><strong>{selectedVoice ? `${VOICES.find(v => v.id === selectedVoice)?.name}'s voice` : 'No voice selected'}</strong></div></div>
+    <div className="preview-header"><div><div className="eyebrow">Live preview</div><h3>{rendering ? 'Rendering your scene' : videoUrl ? 'Rendered video' : 'Motion preview'}</h3></div><div className={`preview-status ${rendering ? 'rendering' : 'ready'}`}><i /> {rendering ? `${progress}%` : videoUrl ? 'Video ready' : previewing ? 'Previewing' : 'Preview ready'}</div></div>
+    <div className={`preview-stage ${rendering ? 'is-rendering' : ''}`}>{videoUrl && !rendering ? <video className="preview-video" src={videoUrl} controls autoPlay loop playsInline /> : <img className={`preview-image ${previewing ? 'previewing' : ''}`} src={imageSrc} alt="Motion preview" />}<div className="preview-vignette" /><div className="scanline" />{rendering && <div className="render-progress"><div className="render-spinner"><Icon name="sparkle" size={20} /></div><strong>Building movement</strong><span>Generating depth, light, and camera motion</span><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div>}{!rendering && !videoUrl && !previewing && <button className="preview-play" aria-label="Play motion preview" onClick={() => setPreviewing(true)}><Icon name="play" size={22} /></button>}<div className="preview-caption"><span>SCENE 01</span><strong>{selectedVoice ? `${VOICES.find(v => v.id === selectedVoice)?.name}'s voice` : 'No voice selected'}</strong></div></div>
     <div className="preview-timeline"><span>0:00</span><div className="timeline-track"><span className="timeline-fill" style={{ width: rendering ? `${Math.max(progress, 14)}%` : videoUrl ? '100%' : '31%' }} /><i style={{ left: rendering ? `${progress}%` : videoUrl ? '100%' : '31%' }} /></div><span>0:{duration.replace('s', '').padStart(2, '0')}</span></div>
     <div className="preview-meta"><div><span>Camera</span><strong>Slow push in</strong></div><div><span>Style</span><strong>Natural film grain</strong></div><div><span>Audio</span><strong>{selectedVoice ? 'Voice + ambience' : 'Add a voice'}</strong></div></div>
   </div>
 }
 
-function Storyboard({ selectedScene, setSelectedScene }) {
-  return <section className="storyboard panel"><div className="storyboard-top"><div><div className="eyebrow">Story sequence</div><h3>Storyboard <span>3 scenes · 10 seconds</span></h3></div><button className="button secondary compact"><Icon name="plus" size={14} /> Add scene</button></div><div className="scene-list">{SCENES.map((scene, index) => <button key={scene.id} className={`scene-card ${selectedScene === scene.id ? 'selected' : ''}`} onClick={() => setSelectedScene(scene.id)}><div className="scene-thumb"><img src={scene.image} alt="" /><span>{index + 1}</span>{selectedScene === scene.id && <i className="scene-selected"><Icon name="check" size={10} /></i>}</div><div className="scene-copy"><div><strong>{scene.name}</strong><span>{scene.time}</span></div><p>{scene.caption}</p></div><Icon name="more" size={16} /></button>)}</div></section>
+function Storyboard({ selectedScene, setSelectedScene, showToast }) {
+  const [scenes, setScenes] = useState(SCENES)
+  function addScene() {
+    setScenes(prev => {
+      const index = prev.length
+      const start = index * 3
+      return [...prev, { id: Date.now(), name: `Scene ${index + 1}`, time: `0:${String(start).padStart(2, '0')} — 0:${String(start + 3).padStart(2, '0')}`, image: `${ASSET_BASE}assets/scene-${(index % 2) + 2}.svg`, caption: 'Describe this beat of the story.' }]
+    })
+    showToast('Scene added', 'A new scene was appended to the storyboard.')
+  }
+  return <section className="storyboard panel"><div className="storyboard-top"><div><div className="eyebrow">Story sequence</div><h3>Storyboard <span>{scenes.length} scenes · {scenes.length * 3 + 1} seconds</span></h3></div><button className="button secondary compact" onClick={addScene}><Icon name="plus" size={14} /> Add scene</button></div><div className="scene-list">{scenes.map((scene, index) => <button key={scene.id} className={`scene-card ${selectedScene === scene.id ? 'selected' : ''}`} onClick={() => setSelectedScene(scene.id)}><div className="scene-thumb"><img src={scene.image} alt="" /><span>{index + 1}</span>{selectedScene === scene.id && <i className="scene-selected"><Icon name="check" size={10} /></i>}</div><div className="scene-copy"><div><strong>{scene.name}</strong><span>{scene.time}</span></div><p>{scene.caption}</p></div><Icon name="more" size={16} /></button>)}</div></section>
 }
 
 function ActivityCard({ rendering, progress, selectedVoice, onRender }) {
@@ -173,6 +202,69 @@ function ActivityCard({ rendering, progress, selectedVoice, onRender }) {
 }
 
 function Toast({ toast }) { if (!toast) return null; return <div className="toast"><span className="toast-icon"><Icon name={toast.type === 'success' ? 'check' : 'sparkle'} size={14} /></span><div><strong>{toast.title}</strong><span>{toast.message}</span></div></div> }
+
+const PROJECTS = [
+  { id: 'sunset', name: 'Sunset portrait', meta: 'Rendered 2 days ago · 10s · 9:16', image: `${ASSET_BASE}assets/hero-still.svg` },
+  { id: 'reveal', name: 'The reveal', meta: 'Draft · 5s · 1:1', image: `${ASSET_BASE}assets/scene-2.svg` },
+  { id: 'closing', name: 'Closing thought', meta: 'Draft · 15s · 16:9', image: `${ASSET_BASE}assets/scene-3.svg` },
+]
+
+function ProjectsView({ onOpen }) {
+  return <main className="main-content view-content">
+    <SectionHeader eyebrow="workspace" title="Projects" note="Pick up where you left off, or open a draft in the studio." />
+    <div className="view-grid">{PROJECTS.map(project => <button key={project.id} className="view-card panel" onClick={() => onOpen(project)}><div className="view-card-thumb"><img src={project.image} alt="" /></div><div className="view-card-copy"><strong>{project.name}</strong><span>{project.meta}</span></div><span className="view-card-action">Open in studio <Icon name="arrow" size={13} /></span></button>)}</div>
+  </main>
+}
+
+const TEMPLATES = [
+  { id: 'golden', name: 'Golden hour portrait', note: 'Slow push-in with warm drifting light', prompt: 'Slow cinematic push-in. Warm golden-hour light drifts across the subject while soft highlights shimmer in the background.', style: 'cinematic', aspect: '9:16', duration: '10s', intensity: 35, image: `${ASSET_BASE}assets/hero-still.svg` },
+  { id: 'product', name: 'Product reveal', note: 'Confident orbit with studio energy', prompt: 'Smooth orbital camera move around the subject. Crisp studio lighting with a subtle parallax reveal.', style: 'documentary', aspect: '1:1', duration: '5s', intensity: 55, image: `${ASSET_BASE}assets/scene-2.svg` },
+  { id: 'dream', name: 'Dreamscape drift', note: 'Floating haze and soft focus', prompt: 'Gentle floating drift through soft mist. Light blooms and drifts slowly, edges glow with a dreamlike haze.', style: 'dreamy', aspect: '16:9', duration: '15s', intensity: 22, image: `${ASSET_BASE}assets/scene-3.svg` },
+]
+
+function TemplatesView({ onApply }) {
+  return <main className="main-content view-content">
+    <SectionHeader eyebrow="starting points" title="Templates" note="Apply a template to preload the motion prompt, style, and framing in the studio." />
+    <div className="view-grid">{TEMPLATES.map(template => <button key={template.id} className="view-card panel" onClick={() => onApply(template)}><div className="view-card-thumb"><img src={template.image} alt="" /></div><div className="view-card-copy"><strong>{template.name}</strong><span>{template.note}</span><div className="voice-tags"><em>{template.aspect}</em><em>{template.duration}</em><em>{template.style}</em></div></div><span className="view-card-action">Use template <Icon name="arrow" size={13} /></span></button>)}</div>
+  </main>
+}
+
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
+function SettingsView() {
+  const [health, setHealth] = useState(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    if (!API_URL) return
+    let cancelled = false
+    fetch(`${API_URL}/health`).then(r => r.json()).then(data => { if (!cancelled) setHealth(data) }).catch(e => { if (!cancelled) setError(e.message) })
+    return () => { cancelled = true }
+  }, [])
+  const rows = [
+    { label: 'Render API', value: API_URL || 'Not configured — demo mode', ok: Boolean(API_URL) },
+    { label: 'API status', value: !API_URL ? 'Demo mode (no API)' : health ? health.status : error ? `Unreachable: ${error}` : 'Checking…', ok: health?.status === 'ok' },
+    { label: 'Video model', value: health?.videoProvider || (API_URL ? 'Waiting for API…' : 'Runware (configure on server)'), ok: Boolean(health?.videoProvider && health.videoProvider !== 'not configured') },
+    { label: 'Voice provider', value: health?.voiceProvider || (API_URL ? 'Waiting for API…' : 'ElevenLabs (configure on server)'), ok: Boolean(health?.voiceProvider && health.voiceProvider !== 'not configured') },
+  ]
+  return <main className="main-content view-content">
+    <SectionHeader eyebrow="workspace" title="Settings" note="Connection status for the render pipeline. Provider keys live on the server, never in the browser." />
+    <div className="panel settings-panel">{rows.map(row => <div key={row.label} className="health-row"><span>{row.label}</span><strong className={row.ok ? 'good' : 'pending'}>{row.ok && <Icon name="check" size={13} />} {row.value}</strong></div>)}</div>
+  </main>
+}
+
+const FAQS = [
+  { q: 'How do I render a real video?', a: 'Upload an image, write a motion prompt, then press Render video. The render API sends the image to Runware and streams progress back here.' },
+  { q: 'Why is my render failing?', a: 'Check Settings — the video model must not say “not configured”. The server needs a RUNWARE_API_KEY environment variable.' },
+  { q: 'How do voiceovers work?', a: 'Write a narration script and pick a voice. With ElevenLabs configured on the server, the voice is mixed into the final MP4. The play buttons preview each voice style in your browser.' },
+  { q: 'Where do my videos go?', a: 'Finished renders appear in the live preview. Use Export in the top bar to download the MP4.' },
+]
+
+function HelpView() {
+  return <main className="main-content view-content">
+    <SectionHeader eyebrow="support" title="Help center" note="Quick answers about rendering, voices, and exports." />
+    <div className="panel settings-panel">{FAQS.map(item => <div key={item.q} className="faq-row"><strong>{item.q}</strong><p>{item.a}</p></div>)}</div>
+  </main>
+}
 
 export default function App() {
   const [activeNav, setActiveNav] = useState('studio')
@@ -242,16 +334,33 @@ export default function App() {
     const link = document.createElement('a'); link.href = videoUrl; link.download = 'frameforge-story.mp4'; link.target = '_blank'; link.click()
   }
 
+  function openProject(project) {
+    setImageSrc(project.image); setImageName(`${project.id}.jpg`); setImageFile(null); setVideoUrl('')
+    setActiveNav('studio')
+    showToast('Project opened', `“${project.name}” is loaded in the studio.`)
+  }
+  function applyTemplate(template) {
+    setPrompt(template.prompt); setStyle(template.style); setAspect(template.aspect); setDuration(template.duration); setIntensity(template.intensity)
+    setImageSrc(template.image); setImageFile(null); setVideoUrl('')
+    setActiveNav('studio')
+    showToast('Template applied', `“${template.name}” settings are loaded — tweak and render.`)
+  }
+
   return <div className="app-shell">
-    <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
-    <div className="main-shell"><Topbar onRender={runRender} rendering={rendering} onDownload={handleDownload} />
-      <main className="main-content">
+    <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} showToast={showToast} />
+    <div className="main-shell"><Topbar onRender={runRender} rendering={rendering} onDownload={handleDownload} onHelp={() => setActiveNav('help')} showToast={showToast} />
+      {activeNav === 'studio' && <main className="main-content">
         <div className="hero-row"><div><div className="eyebrow hero-eyebrow"><span className="live-dot" /> image to video studio</div><h1>Turn a still into a story<span className="period">.</span></h1><p className="hero-copy">Bring a single frame to life with directed motion, atmosphere, and a voice that feels human.</p></div><div className="hero-side"><div className="last-saved"><span>Last saved</span><strong>just now</strong></div><div className="avatar-stack"><span className="stack-avatar one">AM</span><span className="stack-avatar two">+</span></div></div></div>
         <div className="workspace-grid"><div className="workflow-column"><SourceCard imageSrc={imageSrc} imageName={imageName} onPickImage={handlePickImage} /><MotionControls prompt={prompt} setPrompt={setPrompt} aspect={aspect} setAspect={setAspect} duration={duration} setDuration={setDuration} style={style} setStyle={setStyle} intensity={intensity} setIntensity={setIntensity} /></div><div className="preview-column"><PreviewCard imageSrc={imageSrc} videoUrl={videoUrl} prompt={prompt} rendering={rendering} progress={progress} selectedVoice={selectedVoice} duration={duration} /><ActivityCard rendering={rendering} progress={progress} selectedVoice={selectedVoice} onRender={runRender} /></div></div>
-        <VoiceSection selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} narration={narration} setNarration={setNarration} />
-        <Storyboard selectedScene={selectedScene} setSelectedScene={setSelectedScene} />
+        <VoiceSection selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} narration={narration} setNarration={setNarration} showToast={showToast} />
+        <Storyboard selectedScene={selectedScene} setSelectedScene={setSelectedScene} showToast={showToast} />
         <div className="bottom-note"><span><Icon name="wand" size={14} /> Generated with Frameforge motion engine</span><span>All renders are private by default <Icon name="help" size={13} /></span></div>
-      </main>
+      </main>}
+      {activeNav === 'projects' && <ProjectsView onOpen={openProject} />}
+      {activeNav === 'voices' && <main className="main-content view-content"><VoiceSection selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} narration={narration} setNarration={setNarration} showToast={showToast} /></main>}
+      {activeNav === 'templates' && <TemplatesView onApply={applyTemplate} />}
+      {activeNav === 'settings' && <SettingsView />}
+      {activeNav === 'help' && <HelpView />}
     </div>
     <Toast toast={toast} />
   </div>
