@@ -11,10 +11,9 @@ const NAV_ITEMS = [
 ]
 
 const VOICES = [
-  { id: 'maya', name: 'Maya', role: 'Warm storyteller', language: 'English', accent: 'US / neutral', tone: 'Warm · intimate', color: '#f0a57a', bars: [3, 6, 8, 5, 9, 4, 7, 3, 8, 5, 6, 4], lang: 'en-US', pitch: 1.05, rate: 0.95, sample: "Hi, I'm Maya. Every image holds a moment — let me tell its story." },
-  { id: 'jonah', name: 'Jonah', role: 'Documentary calm', language: 'English', accent: 'UK / soft', tone: 'Measured · clear', color: '#8bb8f4', bars: [7, 4, 5, 8, 3, 7, 9, 4, 6, 8, 5, 7], lang: 'en-GB', pitch: 0.85, rate: 0.9, sample: "I'm Jonah. Calm, measured narration for stories that take their time." },
+  { id: 'bradyj', name: 'Brady', role: 'Warm storyteller', language: 'English', accent: 'US / neutral', tone: 'Warm · confident', color: '#f0a57a', bars: [3, 6, 8, 5, 9, 4, 7, 3, 8, 5, 6, 4], lang: 'en-US', pitch: 0.95, rate: 0.95, sample: "Hi, I'm Brady. Every image holds a moment — let me tell its story." },
+  { id: 'newdave2026', name: 'Dave', role: 'Documentary calm', language: 'English', accent: 'US / relaxed', tone: 'Measured · clear', color: '#8bb8f4', bars: [7, 4, 5, 8, 3, 7, 9, 4, 6, 8, 5, 7], lang: 'en-US', pitch: 0.85, rate: 0.9, sample: "I'm Dave. Calm, measured narration for stories that take their time." },
   { id: 'sora', name: 'Sora', role: 'Bright guide', language: 'English', accent: 'AU / light', tone: 'Curious · bright', color: '#b6a2f5', bars: [4, 7, 5, 9, 5, 8, 4, 6, 8, 4, 7, 5], lang: 'en-AU', pitch: 1.15, rate: 1.05, sample: "Hey, I'm Sora! Bright and curious — perfect for guides and explainers." },
-  { id: 'luis', name: 'Luis', role: 'Conversational', language: 'Spanish', accent: 'MX / natural', tone: 'Friendly · vivid', color: '#7bc4b1', bars: [5, 4, 8, 6, 9, 5, 7, 4, 8, 6, 5, 9], lang: 'es-MX', pitch: 1, rate: 1, sample: 'Hola, soy Luis. Una voz natural y cercana para tus historias.' },
 ]
 
 const SCENES = [
@@ -276,7 +275,7 @@ export default function App() {
   const [duration, setDuration] = useState('10s')
   const [style, setStyle] = useState('cinematic')
   const [intensity, setIntensity] = useState(38)
-  const [selectedVoice, setSelectedVoice] = useState('maya')
+  const [selectedVoice, setSelectedVoice] = useState('bradyj')
   const [narration, setNarration] = useState('Every image holds a moment. Give it room to move, and let the light tell the rest of the story.')
   const [selectedScene, setSelectedScene] = useState(1)
   const [rendering, setRendering] = useState(false)

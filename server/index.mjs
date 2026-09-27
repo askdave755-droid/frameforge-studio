@@ -49,13 +49,13 @@ function asSeconds(value) {
 }
 
 function resolveVoiceId(requested) {
-  const map = {
-    maya: process.env.VOICE_MAYA_ID,
-    jonah: process.env.VOICE_JONAH_ID,
-    sora: process.env.VOICE_SORA_ID,
-    luis: process.env.VOICE_LUIS_ID,
+  if (!requested) return ''
+  const map = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    const match = /^voice_(.+)_id$/i.exec(key)
+    if (match && value) map[match[1].toLowerCase()] = value
   }
-  return map[requested] || (requested && requested.length > 10 ? requested : '')
+  return map[String(requested).toLowerCase()] || (requested.length > 10 ? requested : '')
 }
 
 function extractUrl(output) {
