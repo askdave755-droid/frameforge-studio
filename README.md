@@ -27,3 +27,24 @@ This repo includes a GitHub Actions workflow at `.github/workflows/deploy-pages.
 ```text
 https://askdave755-droid.github.io/frameforge-studio/
 ```
+
+## Real video rendering
+
+The GitHub Pages site is static, so API keys must live in a separate server. This repo includes `server/index.mjs`, which connects the UI to:
+
+- Runware image-to-video for the animated MP4 (default: MiniMax H3 Max Turbo)
+- ElevenLabs for the selected voiceover
+- FFmpeg for mixing the voiceover into the generated video
+
+Run the API locally with:
+
+```bash
+cp .env.example .env
+# fill in the provider keys and VOICE_*_ID values
+npm run server
+```
+
+Set `VITE_API_URL` to the deployed API URL as a GitHub Actions repository variable. The frontend automatically switches from demo mode to real rendering when that variable is present.
+
+
+For lower-cost generation, set `RUNWARE_API_KEY`, `RUNWARE_MODEL=minimax:h3@max-turbo`, and `RUNWARE_RESOLUTION=480p`. Runware uses its native asynchronous `videoInference` plus `getResponse` flow; the server keeps the provider key off the static frontend.
