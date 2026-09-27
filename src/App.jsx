@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { createRender, getRender, hasRenderApi } from './api.js'
 
 const ASSET_BASE = import.meta.env.BASE_URL
 
@@ -104,7 +105,7 @@ function SectionHeader({ eyebrow, title, note, action }) {
 function SourceCard({ imageSrc, imageName, onPickImage }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
-  function useFile(file) { if (file && file.type.startsWith('image/')) onPickImage(URL.createObjectURL(file), file.name) }
+  function useFile(file) { if (file && file.type.startsWith('image/')) onPickImage(URL.createObjectURL(file), file.name, file) }
   return <div className="source-card panel">
     <div className="panel-heading"><div><div className="eyebrow">01 / source frame</div><h3>Start with an image</h3></div><span className="status-dot"><i /> Ready</span></div>
     <div className={`dropzone ${dragging ? 'dragging' : ''}`} onClick={() => inputRef.current?.click()} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); useFile(e.dataTransfer.files[0]) }}>
@@ -140,24 +141,25 @@ function VoiceCard({ voice, selected, playing, onSelect, onPlay }) {
   </div>
 }
 
-function VoiceSection({ selectedVoice, setSelectedVoice }) {
+function VoiceSection({ selectedVoice, setSelectedVoice, narration, setNarration }) {
   const [playingVoice, setPlayingVoice] = useState(null)
   const [query, setQuery] = useState('')
   const visibleVoices = useMemo(() => VOICES.filter(v => `${v.name} ${v.role} ${v.accent}`.toLowerCase().includes(query.toLowerCase())), [query])
   useEffect(() => { if (!playingVoice) return; const timer = setTimeout(() => setPlayingVoice(null), 1800); return () => clearTimeout(timer) }, [playingVoice])
   return <section className="voice-section panel">
     <SectionHeader eyebrow="03 / narration" title="Give it a voice" note="Add a voiceover to make the moment feel intentional." action={<div className="voice-actions-header"><div className="search-field"><Icon name="search" size={15} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search voices" /></div><button className="button secondary compact"><Icon name="plus" size={14} /> Clone voice</button></div>} />
-    <div className="voice-subbar"><div className="voice-toggle"><span className="toggle on"><i /></span><span>Voiceover enabled</span></div><div className="voice-note"><Icon name="volume" size={14} /> Preview uses 10 seconds of your script</div></div>
+    <div className="voice-subbar"><div className="voice-toggle"><span className="toggle on"><i /></span><span>Voiceover enabled</span></div><div className="voice-note"><Icon name="volume" size={14} /> This script becomes the audio track</div></div>
+    <div className="voice-script-wrap"><div className="field-label"><label htmlFor="narration">Narration script</label><span>{narration.length} / 2,000</span></div><textarea id="narration" className="voice-script" value={narration} onChange={e => setNarration(e.target.value)} placeholder="Write what the selected voice should say…" /></div>
     <div className="voices-grid">{visibleVoices.map(voice => <VoiceCard key={voice.id} voice={voice} selected={selectedVoice === voice.id} playing={playingVoice === voice.id} onSelect={setSelectedVoice} onPlay={id => setPlayingVoice(playingVoice === id ? null : id)} />)}</div>
     <div className="voice-footer"><span>Showing {visibleVoices.length} of 24 voices</span><button className="text-button">Browse full library <Icon name="arrow" size={13} /></button></div>
   </section>
 }
 
-function PreviewCard({ imageSrc, prompt, rendering, progress, selectedVoice, duration }) {
+function PreviewCard({ imageSrc, videoUrl, prompt, rendering, progress, selectedVoice, duration }) {
   return <div className="preview-card panel">
-    <div className="preview-header"><div><div className="eyebrow">Live preview</div><h3>{rendering ? 'Rendering your scene' : 'Motion preview'}</h3></div><div className={`preview-status ${rendering ? 'rendering' : 'ready'}`}><i /> {rendering ? `${progress}%` : 'Preview ready'}</div></div>
-    <div className={`preview-stage ${rendering ? 'is-rendering' : ''}`}><img className="preview-image" src={imageSrc} alt="Motion preview" /><div className="preview-vignette" /><div className="scanline" />{rendering && <div className="render-progress"><div className="render-spinner"><Icon name="sparkle" size={20} /></div><strong>Building movement</strong><span>Generating depth, light, and camera motion</span><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div>}{!rendering && <button className="preview-play"><Icon name="play" size={22} /></button>}<div className="preview-caption"><span>SCENE 01</span><strong>{selectedVoice ? `${VOICES.find(v => v.id === selectedVoice)?.name}'s voice` : 'No voice selected'}</strong></div></div>
-    <div className="preview-timeline"><span>0:00</span><div className="timeline-track"><span className="timeline-fill" style={{ width: rendering ? `${Math.max(progress, 14)}%` : '31%' }} /><i style={{ left: rendering ? `${progress}%` : '31%' }} /></div><span>0:{duration.replace('s', '').padStart(2, '0')}</span></div>
+    <div className="preview-header"><div><div className="eyebrow">Live preview</div><h3>{rendering ? 'Rendering your scene' : videoUrl ? 'Rendered video' : 'Motion preview'}</h3></div><div className={`preview-status ${rendering ? 'rendering' : 'ready'}`}><i /> {rendering ? `${progress}%` : videoUrl ? 'Video ready' : 'Preview ready'}</div></div>
+    <div className={`preview-stage ${rendering ? 'is-rendering' : ''}`}>{videoUrl && !rendering ? <video className="preview-video" src={videoUrl} controls autoPlay loop playsInline /> : <img className="preview-image" src={imageSrc} alt="Motion preview" />}<div className="preview-vignette" /><div className="scanline" />{rendering && <div className="render-progress"><div className="render-spinner"><Icon name="sparkle" size={20} /></div><strong>Building movement</strong><span>Generating depth, light, and camera motion</span><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div>}{!rendering && !videoUrl && <button className="preview-play"><Icon name="play" size={22} /></button>}<div className="preview-caption"><span>SCENE 01</span><strong>{selectedVoice ? `${VOICES.find(v => v.id === selectedVoice)?.name}'s voice` : 'No voice selected'}</strong></div></div>
+    <div className="preview-timeline"><span>0:00</span><div className="timeline-track"><span className="timeline-fill" style={{ width: rendering ? `${Math.max(progress, 14)}%` : videoUrl ? '100%' : '31%' }} /><i style={{ left: rendering ? `${progress}%` : videoUrl ? '100%' : '31%' }} /></div><span>0:{duration.replace('s', '').padStart(2, '0')}</span></div>
     <div className="preview-meta"><div><span>Camera</span><strong>Slow push in</strong></div><div><span>Style</span><strong>Natural film grain</strong></div><div><span>Audio</span><strong>{selectedVoice ? 'Voice + ambience' : 'Add a voice'}</strong></div></div>
   </div>
 }
@@ -166,8 +168,8 @@ function Storyboard({ selectedScene, setSelectedScene }) {
   return <section className="storyboard panel"><div className="storyboard-top"><div><div className="eyebrow">Story sequence</div><h3>Storyboard <span>3 scenes · 10 seconds</span></h3></div><button className="button secondary compact"><Icon name="plus" size={14} /> Add scene</button></div><div className="scene-list">{SCENES.map((scene, index) => <button key={scene.id} className={`scene-card ${selectedScene === scene.id ? 'selected' : ''}`} onClick={() => setSelectedScene(scene.id)}><div className="scene-thumb"><img src={scene.image} alt="" /><span>{index + 1}</span>{selectedScene === scene.id && <i className="scene-selected"><Icon name="check" size={10} /></i>}</div><div className="scene-copy"><div><strong>{scene.name}</strong><span>{scene.time}</span></div><p>{scene.caption}</p></div><Icon name="more" size={16} /></button>)}</div></section>
 }
 
-function ActivityCard({ rendering, progress, selectedVoice }) {
-  return <div className="activity panel"><div className="activity-heading"><div><div className="eyebrow">Project health</div><h3>Ready to render</h3></div><span className="health-icon"><Icon name="check" size={16} /></span></div><div className="health-row"><span>Source image</span><strong className="good"><Icon name="check" size={13} /> Added</strong></div><div className="health-row"><span>Motion direction</span><strong className="good"><Icon name="check" size={13} /> Added</strong></div><div className="health-row"><span>Voiceover</span><strong className={selectedVoice ? 'good' : 'pending'}>{selectedVoice ? <><Icon name="check" size={13} /> Selected</> : 'Optional'}</strong></div><div className="activity-divider" /><div className="render-estimate"><div><span>Estimated render</span><strong>{rendering ? `${progress}% complete` : 'About 45 sec'}</strong></div><div className="estimate-orb"><Icon name="sparkle" size={15} /></div></div><button className="full-button" disabled={rendering}><Icon name="sparkle" size={15} /> {rendering ? 'Rendering in progress…' : 'Render this story'}</button></div>
+function ActivityCard({ rendering, progress, selectedVoice, onRender }) {
+  return <div className="activity panel"><div className="activity-heading"><div><div className="eyebrow">Project health</div><h3>Ready to render</h3></div><span className="health-icon"><Icon name="check" size={16} /></span></div><div className="health-row"><span>Source image</span><strong className="good"><Icon name="check" size={13} /> Added</strong></div><div className="health-row"><span>Motion direction</span><strong className="good"><Icon name="check" size={13} /> Added</strong></div><div className="health-row"><span>Voiceover</span><strong className={selectedVoice ? 'good' : 'pending'}>{selectedVoice ? <><Icon name="check" size={13} /> Selected</> : 'Optional'}</strong></div><div className="activity-divider" /><div className="render-estimate"><div><span>Estimated render</span><strong>{rendering ? `${progress}% complete` : 'About 45 sec'}</strong></div><div className="estimate-orb"><Icon name="sparkle" size={15} /></div></div><button className="full-button" onClick={onRender} disabled={rendering}><Icon name="sparkle" size={15} /> {rendering ? 'Rendering in progress…' : 'Render this story'}</button></div>
 }
 
 function Toast({ toast }) { if (!toast) return null; return <div className="toast"><span className="toast-icon"><Icon name={toast.type === 'success' ? 'check' : 'sparkle'} size={14} /></span><div><strong>{toast.title}</strong><span>{toast.message}</span></div></div> }
@@ -177,45 +179,76 @@ export default function App() {
   const [prompt, setPrompt] = useState('Slow cinematic push-in. Let the warm sunset light move across her face while the water glimmers softly in the background.')
   const [imageSrc, setImageSrc] = useState(`${ASSET_BASE}assets/hero-still.svg`)
   const [imageName, setImageName] = useState('sunset-portrait.jpg')
+  const [imageFile, setImageFile] = useState(null)
   const [aspect, setAspect] = useState('9:16')
   const [duration, setDuration] = useState('10s')
   const [style, setStyle] = useState('cinematic')
   const [intensity, setIntensity] = useState(38)
   const [selectedVoice, setSelectedVoice] = useState('maya')
+  const [narration, setNarration] = useState('Every image holds a moment. Give it room to move, and let the light tell the rest of the story.')
   const [selectedScene, setSelectedScene] = useState(1)
   const [rendering, setRendering] = useState(false)
   const [progress, setProgress] = useState(0)
   const [toast, setToast] = useState(null)
+  const [videoUrl, setVideoUrl] = useState('')
   const intervalRef = useRef(null)
 
   useEffect(() => () => clearInterval(intervalRef.current), [])
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(null), 3600); return () => clearTimeout(timer) }, [toast])
 
   function showToast(title, message, type = 'success') { setToast({ title, message, type }) }
-  function handlePickImage(url, name) { setImageSrc(url); setImageName(name || 'uploaded-image.jpg'); showToast('Image added', 'Your new source frame is ready to animate.') }
-  function runRender() {
+  function handlePickImage(url, name, file) { setImageSrc(url); setImageName(name || 'uploaded-image.jpg'); setImageFile(file || null); setVideoUrl(''); showToast('Image added', 'Your new source frame is ready to animate.') }
+  async function getSourceFile() {
+    if (imageFile) return imageFile
+    const response = await fetch(imageSrc)
+    const blob = await response.blob()
+    return new File([blob], imageName || 'source-image.jpg', { type: blob.type || 'image/jpeg' })
+  }
+  async function pollRender(jobId) {
+    while (true) {
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      const job = await getRender(jobId)
+      setProgress(job.progress || 0)
+      if (job.status === 'completed') return job
+      if (job.status === 'failed') throw new Error(job.error || 'Render failed')
+    }
+  }
+  async function runRender() {
     if (rendering) return
     clearInterval(intervalRef.current)
-    setRendering(true); setProgress(8)
-    let value = 8
-    intervalRef.current = setInterval(() => {
-      value += Math.round(Math.random() * 10) + 4
-      if (value >= 100) {
-        value = 100; clearInterval(intervalRef.current); setProgress(value)
-        setTimeout(() => { setRendering(false); showToast('Video rendered', 'Your 10-second story is ready to export.') }, 450)
-      }
-      setProgress(value)
-    }, 380)
+    setRendering(true); setProgress(8); setVideoUrl('')
+    if (!hasRenderApi) {
+      let value = 8
+      intervalRef.current = setInterval(() => {
+        value += Math.round(Math.random() * 10) + 4
+        if (value >= 100) { value = 100; clearInterval(intervalRef.current); setProgress(value); setTimeout(() => { setRendering(false); showToast('Demo render complete', 'Add VITE_API_URL to connect a real video provider.') }, 450) }
+        setProgress(value)
+      }, 380)
+      return
+    }
+    try {
+      const job = await createRender({ image: await getSourceFile(), prompt, narration, duration, aspect, style, intensity, voiceId: selectedVoice })
+      const completed = await pollRender(job.jobId)
+      setVideoUrl(completed.videoUrl)
+      showToast('Video rendered', completed.message || 'Your video is ready to export.')
+    } catch (error) {
+      showToast('Render failed', error.message, 'error')
+    } finally {
+      setRendering(false)
+    }
   }
-  function handleDownload() { showToast('Export queued', 'Your MP4 will be available when the render finishes.') }
+  function handleDownload() {
+    if (!videoUrl) return showToast('Nothing to export yet', 'Render the story first, then export the MP4.', 'error')
+    const link = document.createElement('a'); link.href = videoUrl; link.download = 'frameforge-story.mp4'; link.target = '_blank'; link.click()
+  }
 
   return <div className="app-shell">
     <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
     <div className="main-shell"><Topbar onRender={runRender} rendering={rendering} onDownload={handleDownload} />
       <main className="main-content">
         <div className="hero-row"><div><div className="eyebrow hero-eyebrow"><span className="live-dot" /> image to video studio</div><h1>Turn a still into a story<span className="period">.</span></h1><p className="hero-copy">Bring a single frame to life with directed motion, atmosphere, and a voice that feels human.</p></div><div className="hero-side"><div className="last-saved"><span>Last saved</span><strong>just now</strong></div><div className="avatar-stack"><span className="stack-avatar one">AM</span><span className="stack-avatar two">+</span></div></div></div>
-        <div className="workspace-grid"><div className="workflow-column"><SourceCard imageSrc={imageSrc} imageName={imageName} onPickImage={handlePickImage} /><MotionControls prompt={prompt} setPrompt={setPrompt} aspect={aspect} setAspect={setAspect} duration={duration} setDuration={setDuration} style={style} setStyle={setStyle} intensity={intensity} setIntensity={setIntensity} /></div><div className="preview-column"><PreviewCard imageSrc={imageSrc} prompt={prompt} rendering={rendering} progress={progress} selectedVoice={selectedVoice} duration={duration} /><ActivityCard rendering={rendering} progress={progress} selectedVoice={selectedVoice} /></div></div>
-        <VoiceSection selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} />
+        <div className="workspace-grid"><div className="workflow-column"><SourceCard imageSrc={imageSrc} imageName={imageName} onPickImage={handlePickImage} /><MotionControls prompt={prompt} setPrompt={setPrompt} aspect={aspect} setAspect={setAspect} duration={duration} setDuration={setDuration} style={style} setStyle={setStyle} intensity={intensity} setIntensity={setIntensity} /></div><div className="preview-column"><PreviewCard imageSrc={imageSrc} videoUrl={videoUrl} prompt={prompt} rendering={rendering} progress={progress} selectedVoice={selectedVoice} duration={duration} /><ActivityCard rendering={rendering} progress={progress} selectedVoice={selectedVoice} onRender={runRender} /></div></div>
+        <VoiceSection selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} narration={narration} setNarration={setNarration} />
         <Storyboard selectedScene={selectedScene} setSelectedScene={setSelectedScene} />
         <div className="bottom-note"><span><Icon name="wand" size={14} /> Generated with Frameforge motion engine</span><span>All renders are private by default <Icon name="help" size={13} /></span></div>
       </main>

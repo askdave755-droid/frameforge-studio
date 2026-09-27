@@ -7,3 +7,7 @@ dist/
 *.log
 
 .npm/
+server/generated/
+
+.cache/
+*.zip

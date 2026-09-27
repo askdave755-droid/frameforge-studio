@@ -3,7 +3,8 @@ import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
 import sharp from 'sharp'
-import ffmpegPath from 'ffmpeg-static'
+import ffmpegStaticPath from 'ffmpeg-static'
+import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { randomUUID } from 'node:crypto'
@@ -12,6 +13,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const execFileAsync = promisify(execFile)
+const ffmpegPath = ffmpegStaticPath && existsSync(ffmpegStaticPath) ? ffmpegStaticPath : 'ffmpeg'
+const ffmpegAvailable = await execFileAsync(ffmpegPath, ['-version']).then(() => true).catch(() => false)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const generatedDir = path.join(__dirname, 'generated')
 const port = Number(process.env.PORT || 8787)
@@ -150,7 +153,7 @@ async function downloadTo(url, destination) {
 }
 
 async function muxAudio(videoPath, audioPath, finalPath) {
-  if (!ffmpegPath) throw new Error('ffmpeg is not available on this server')
+  if (!ffmpegAvailable) throw new Error('ffmpeg is not available on this server')
   await execFileAsync(ffmpegPath, [
     '-y', '-i', videoPath, '-i', audioPath,
     '-map', '0:v:0', '-map', '1:a:0',
@@ -187,6 +190,12 @@ async function processJob(job, request) {
       audioPath = await makeVoiceover({ text: request.narration, voiceKey: request.voiceId, jobId: job.id })
     } catch (voiceError) {
       setJob(job, { message: `Video ready; voiceover skipped: ${voiceError.message}` })
+    }
+
+    if (audioPath && !ffmpegAvailable) {
+      setJob(job, { message: 'Video ready; voiceover skipped: ffmpeg is not available on this server' })
+      await unlink(audioPath).catch(() => {})
+      audioPath = null
     }
 
     if (audioPath) {
